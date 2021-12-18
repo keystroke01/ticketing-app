@@ -69,3 +69,5 @@ app = qtw.QApplication([])
 mainWindow = MainWindow()
 # mainWindow.show()
 app.exec_()
+
+#TESTING
