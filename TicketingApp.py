@@ -12,7 +12,8 @@ from PyQt5 import QtGui as qtg
 class NewTicket(qtw.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Ticketing App")
+        # self.setWindowTitle("Ticketing App")
+        self.setObjectName("New Ticket")
         formLayout = qtw.QFormLayout()
         self.setLayout(formLayout)
         
@@ -43,16 +44,28 @@ class NewTicket(qtw.QWidget):
         formLayout.addRow("Severity", self.ticketSeverity)
         formLayout.addRow("Status", self.ticketStatus)
         formLayout.addRow(self.submitButton)
-        self.show()
+        # self.show()
         
 
 class MainWindow(qtw.QMainWindow):
     def __init__(self):
         super().__init__()
-        newTicket = NewTicket()
-        self.setCentralWidget(newTicket)
+        self.setWindowTitle("Ticketing App")
+        
+        #Tab Widget is the central widget
+        self.tabWidget = qtw.QTabWidget()
+        self.tabWidget.setObjectName("tabWidget")
+        self.setCentralWidget(self.tabWidget)
+        
+        # Create Tab 1 - New Ticket
+        self.newTicket = NewTicket()
+        self.tabWidget.addTab(self.newTicket, "New Ticket")
+        # Create Tab 2 - All Tickets
+        self.tabWidget.addTab(qtw.QLabel("All tickets go here"), "All Tickets")
+        
+        self.show()
         
 app = qtw.QApplication([])
-mw = MainWindow()
-mw.show()
+mainWindow = MainWindow()
+# mainWindow.show()
 app.exec_()
