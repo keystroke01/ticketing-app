@@ -45,8 +45,14 @@ class NewTicket(qtw.QWidget):
         formLayout.addRow(self.submitButton)
         self.show()
         
+
+class MainWindow(qtw.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        newTicket = NewTicket()
+        self.setCentralWidget(newTicket)
         
 app = qtw.QApplication([])
-mw = NewTicket()
-
+mw = MainWindow()
+mw.show()
 app.exec_()
