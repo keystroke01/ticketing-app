@@ -142,11 +142,6 @@ class NewTicket(qtw.QWidget):
             c.execute(sqlQuery)
             conn.commit()
             # print("Row added")
-            # self.outputTable.setItem(0,0,qtw.QTableWidgetItem(self.ticketTitle.text()))
-            # self.outputTable.setItem(0,1,qtw.QTableWidgetItem(self.ticketDesc.toPlainText()))
-            # self.outputTable.resizeColumnsToContents()
-            # self.outputTable.resizeRowsToContents()
-            # self.outputTable.setWordWrap(True)
             
             output = "A new ticket has been created with the following details:"
             output += "\n---------------------------------------------------------"
