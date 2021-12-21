@@ -10,7 +10,7 @@ from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
 from os import path
-import sqlite3, re
+import sqlite3, re, shutil
 
 
 class UpdateTicketWidget(qtw.QWidget):
@@ -68,9 +68,9 @@ class UpdateTicketWidget(qtw.QWidget):
         self.attachedFilesListWidget = qtw.QListWidget()
         self.fileDialogBox = qtw.QFileDialog()
         self.submitButton = qtw.QPushButton("Submit",
-                                            clicked = lambda: self.addNewTicket())
+                                            clicked = lambda: self.addUpdateTicket())
         self.resetButton = qtw.QPushButton("Reset",
-                                            clicked = lambda: self.resetNewTicket())
+                                            clicked = lambda: self.resetTicket())
         self.testButton = qtw.QPushButton("Reset",
                                             clicked = lambda: self.testUpload())
         
@@ -103,7 +103,7 @@ class UpdateTicketWidget(qtw.QWidget):
     
     
     # Method to add a new ticket to the database    
-    def addNewTicket(self):
+    def addUpdateTicket(self):
         
         # Check if the title is empty
         if(re.search("^\s*$", self.ticketTitle.text())): 
@@ -137,6 +137,23 @@ class UpdateTicketWidget(qtw.QWidget):
                      WHERE CODE = '{self.ticketStatus.currentData()}')
                     );"""
             self.cur.execute(sqlQuery)
+            
+            sqlQuery = ""
+            for row in range(self.attachedFilesListWidget.count()):
+                fromPath = self.attachedFilesListWidget.item(row).text()
+                fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
+                fileName = fromPathSplit[len(fromPathSplit) - 1]
+                toPath = "./files/attachments/"+fileName
+                shutil.copy(fromPath,toPath)
+                sqlQuery = f"""
+                INSERT 
+                INTO 
+                TICKET_ATTACHMENTS(ATTACHMENT_PATH,TICKET_ID)
+                VALUES('{toPath}',
+                       (SELECT MAX(TICKET_ID) FROM TICKETS)
+                    );
+                """ 
+                self.cur.execute(sqlQuery)
             self.conn.commit()
             # print("Row added")
             
@@ -153,10 +170,10 @@ class UpdateTicketWidget(qtw.QWidget):
             self.outputTextEdit.setText(output)       
             
             # Clear the input values
-            self.resetNewTicket()
+            self.resetTicket()
     
     # Method to reset the content of the ticket    
-    def resetNewTicket(self):
+    def resetTicket(self):
         # Clear the input values
         self.ticketTitle.clear()
         self.ticketDesc.clear()
@@ -174,10 +191,21 @@ class UpdateTicketWidget(qtw.QWidget):
     
     def testUpload(self):
         for row in range(self.attachedFilesListWidget.count()):
-            fromPath = self.attachedFilesListWidget.item(row).text()
-            toPath = "./files/"
-            print(path.exists(toPath))
-            print(fromPath, toPath, path.exists(toPath))
+           fromPath = self.attachedFilesListWidget.item(row).text()
+           fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
+           fileName = fromPathSplit[len(fromPathSplit) - 1]
+           toPath = "./files/attachments/"+fileName
+           shutil.copy(fromPath,toPath)
+           sqlQuery = f"""
+           INSERT 
+           INTO 
+           TICKET_ATTACHMENTS(ATTACHMENT_PATH,TICKET_ID)
+           VALUES(''
+               );
+           """ 
+            
+            
+            
             
         
 class QueryTicketsWidget(qtw.QWidget):
@@ -356,7 +384,7 @@ class MainWindow(qtw.QMainWindow):
     
         
 if __name__== "__main__":
-    filePath = ("D:/Temp/data.db")
+    filePath = ("./files/data.db")
     if path.exists(filePath):
         # Start the app
         app = qtw.QApplication([])
