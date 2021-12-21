@@ -27,7 +27,6 @@ ticketSeverity = c.fetchall()
 c.execute("SELECT CODE, DESCRIPTION FROM TICKET_TYPE")
 ticketType = c.fetchall()
 
-print(status)
 
 
 class NewTicket(qtw.QWidget):
@@ -41,7 +40,7 @@ class NewTicket(qtw.QWidget):
         self.headLabel = qtw.QLabel("Enter the details of the new ticket below")
         self.headLabel.setFont(qtg.QFont("Arial", 18))
         self.headLabel.setAlignment(qtc.Qt.AlignCenter)
-        formLayout.addRow(self.headLabel)
+        
         
         self.ticketTitle = qtw.QLineEdit(self)
         self.ticketTitle.setPlaceholderText("Title")
@@ -56,36 +55,31 @@ class NewTicket(qtw.QWidget):
         
         # Adding items of TICKET_TYPE
         self.ticketType = qtw.QComboBox()
+        
         for item in ticketType:
             # self.ticketType.addItem(text, data)
             self.ticketType.addItem(item[1], item[0])
+        self.ticketType.setCurrentIndex(-1)
         
         # Adding items of TICKET_SEVERITY
         self.ticketSeverity = qtw.QComboBox()
         for item in ticketSeverity:
             # self.ticketType.addItem(text, data)
             self.ticketSeverity.addItem(item[1], item[0])
+        self.ticketSeverity.setCurrentIndex(-1)
         
         # Adding items of STATUS
         self.ticketStatus = qtw.QComboBox()
         for item in status:
             # self.ticketType.addItem(text, data)
             self.ticketStatus.addItem(item[1], item[0])
-        
+        self.ticketStatus.setCurrentIndex(-1)
         
         self.submitButton = qtw.QPushButton("Submit",
                                             clicked = lambda: self.addNewTicket())
         self.resetButton = qtw.QPushButton("Reset",
                                             clicked = lambda: self.resetNewTicket())
         
-        # self.outputTable = qtw.QTableWidget(self) 
-        # self.outputTable.setRowCount(1)
-        # self.outputTable.setColumnCount(2)
-        # self.outputTable.setHorizontalHeaderLabels(['Title', 
-        #                                             'Desc', 
-        #                                             'Reported Date', 
-        #                                             'Closed Date'])
-        # self.outputTable.setEditTriggers(qtw.QTableWidget.NoEditTriggers)
         
         self.outputTextEdit = qtw.QTextEdit(self,
                                             lineWrapMode=qtw.QTextEdit.FixedColumnWidth,
@@ -95,6 +89,7 @@ class NewTicket(qtw.QWidget):
         
         
         # Add widgets to the form layout
+        formLayout.addRow(self.headLabel)
         formLayout.addRow(self.ticketTitle)
         formLayout.addRow(self.ticketDesc)
         formLayout.addRow("Reported Date", self.reportedDate)
@@ -116,17 +111,13 @@ class NewTicket(qtw.QWidget):
         # Check if the title is empty
         if(re.search("^\s*$", self.ticketTitle.text())): 
             err = "Title is empty or contains only spaces. Please enter a valid Title."
-            print(err)
+            # print(err)
             msg = qtw.QMessageBox()
             msg.setIcon(qtw.QMessageBox.Critical)
             msg.setText(err)
             msg.setWindowTitle("Error")
             msg.exec_()
-           
-            
-                
         else: 
-            print("no")
             sqlQuery = f"""
             INSERT 
             INTO 
@@ -150,7 +141,7 @@ class NewTicket(qtw.QWidget):
                     );"""
             c.execute(sqlQuery)
             conn.commit()
-            print("Row added")
+            # print("Row added")
             # self.outputTable.setItem(0,0,qtw.QTableWidgetItem(self.ticketTitle.text()))
             # self.outputTable.setItem(0,1,qtw.QTableWidgetItem(self.ticketDesc.toPlainText()))
             # self.outputTable.resizeColumnsToContents()
@@ -179,11 +170,140 @@ class NewTicket(qtw.QWidget):
         self.ticketDesc.clear()
         self.reportedDate.clear()
         self.closedDate.clear()
-        self.ticketType.clear()
-        self.ticketSeverity.clear()
-        self.ticketStatus.clear()
+        self.ticketType.setCurrentIndex(-1)
+        self.ticketSeverity.setCurrentIndex(-1)
+        self.ticketStatus.setCurrentIndex(-1)
 
+class QueryTickets(qtw.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setObjectName("Query Tickets")
+        
+        formLayout = qtw.QFormLayout()
+        vLayout = qtw.QVBoxLayout()
+        self.setLayout(vLayout)
+        
+        self.query = ""
+        
+        # Initialize the widgets
+        self.headLabel = qtw.QLabel("Select the below fields to query old tickets")
+        self.headLabel.setFont(qtg.QFont("Arial", 18))
+        self.headLabel.setAlignment(qtc.Qt.AlignCenter)
+        
+        # Adding items of TICKET_TYPE
+        self.ticketType = qtw.QComboBox()
+        for item in ticketType:
+            # self.ticketType.addItem(text, data)
+            self.ticketType.addItem(item[1], item[0])
+        self.ticketType.setCurrentIndex(-1)
+        
+        # Adding items of TICKET_SEVERITY
+        self.ticketSeverity = qtw.QComboBox()
+        for item in ticketSeverity:
+            # self.ticketType.addItem(text, data)
+            self.ticketSeverity.addItem(item[1], item[0])
+        self.ticketSeverity.setCurrentIndex(-1)
+        
+        # Adding items of STATUS
+        self.ticketStatus = qtw.QComboBox()
+        for item in status:
+            # self.ticketType.addItem(text, data)
+            self.ticketStatus.addItem(item[1], item[0])
+        self.ticketStatus.setCurrentIndex(-1)
+        
+        self.queryButton = qtw.QPushButton("Query",
+                                            clicked = lambda: self.queryTickets())
+        self.resetButton = qtw.QPushButton("Reset",
+                                            clicked = lambda: self.resetQuery())
+       
+        
+        self.gridLayout1 = qtw.QGridLayout()
+        
+        self.gridLayout1.setColumnCount = 3
+        self.gridLayout1.setRowCount = 2
+        # Add Grid Headers
+        self.typeLabel = qtw.QLabel("Type")
+        self.typeLabel.setAlignment(qtc.Qt.AlignCenter)
+        self.gridLayout1.addWidget(self.typeLabel, 0, 0)
+        self.severityLabel = qtw.QLabel("Severity")
+        self.severityLabel.setAlignment(qtc.Qt.AlignCenter)
+        self.gridLayout1.addWidget(self.severityLabel, 0, 1)
+        self.statusLabel = qtw.QLabel("Status")
+        self.statusLabel.setAlignment(qtc.Qt.AlignCenter)
+        self.gridLayout1.addWidget(self.statusLabel, 0, 2)
+        # Add Filters
+        self.gridLayout1.addWidget(self.ticketType, 1, 0)
+        self.gridLayout1.addWidget(self.ticketSeverity, 1, 1)
+        self.gridLayout1.addWidget(self.ticketStatus, 1, 2)
+        self.gridLayout1.setAlignment(qtc.Qt.AlignCenter)
+        
+        self.hBoxLayout1 = qtw.QHBoxLayout()
+        self.hBoxLayout1.addWidget(self.queryButton)
+        self.hBoxLayout1.addWidget(self.resetButton)
+        
+        self.outputTable = qtw.QTableWidget(self) 
+        self.outputTable.setRowCount(0)
+        self.outputTable.setColumnCount(0)
+        self.outputTable.setHorizontalHeaderLabels(['Title', 
+                                                    'Desc', 
+                                                    'Reported Date', 
+                                                    'Closed Date'])
+        self.outputTable.setEditTriggers(qtw.QTableWidget.NoEditTriggers)
+        
+        formLayout.addRow(self.headLabel)
+        formLayout.addRow(self.gridLayout1)
+        formLayout.addRow(self.hBoxLayout1)
+        # formLayout.addRow(self.outputTable)
+        vLayout.addLayout(formLayout)
+        vLayout.addWidget(self.outputTable)
+        
+    def queryTickets(self):
+        query = "SELECT * FROM V_TICKETS"
+        
+        queryFilter = " WHERE "
+        
+        if self.ticketType.currentIndex() != -1:
+            queryFilter += f" TYPE = '{self.ticketType.currentText()}'"
+            
+        if self.ticketSeverity.currentIndex() != -1:
+            if queryFilter == " WHERE ":
+                queryFilter += f" SEVERITY = '{self.ticketSeverity.currentText()}'"
+            else:
+                queryFilter += f" AND SEVERITY = '{self.ticketSeverity.currentText()}'"
+        if self.ticketStatus.currentIndex() != -1:
+            if queryFilter == " WHERE ":
+                queryFilter += f" STATUS = '{self.ticketStatus.currentText()}'"
+            else:
+                queryFilter += f" AND STATUS = '{self.ticketStatus.currentText()}'"        
+        
+        if queryFilter != " WHERE ":
+            query += queryFilter
+        # print(query)
+        queryResult = c.execute(query)
+        cols = []
+        for desc in queryResult.description:
+            cols.append(desc[0])
+        # print(cols)
+        # print(queryResult.fetchall())
+        rows = queryResult.fetchall()
+        
+        if len(rows) != 0:
+            self.outputTable.setRowCount(len(rows))
+            self.outputTable.setColumnCount(len(cols))
+            self.outputTable.setHorizontalHeaderLabels(cols)
+            for i in range(0,len(rows)):
+                for j in range(0,len(cols)):
+                    self.outputTable.setItem(i, j, qtw.QTableWidgetItem(rows[i][j]))
+            self.outputTable.setWordWrap(True)
+            self.outputTable.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
 
+    
+    def resetQuery(self):
+        self.ticketType.setCurrentIndex(-1)
+        self.ticketSeverity.setCurrentIndex(-1)
+        self.ticketStatus.setCurrentIndex(-1)
+        
+        
 
 class MainWindow(qtw.QMainWindow):
     def __init__(self):
@@ -196,11 +316,13 @@ class MainWindow(qtw.QMainWindow):
         self.tabWidget.setObjectName("tabWidget")
         self.setCentralWidget(self.tabWidget)
         
-        # Create Tab 1 - New Ticket
+        # Create Tab 1 - All Tickets
+        self.queryTickets = QueryTickets()
+        self.tabWidget.addTab(self.queryTickets, "Query Tickets")
+        # Create Tab 2 - New Ticket
         self.newTicket = NewTicket()
         self.tabWidget.addTab(self.newTicket, "New Ticket")
-        # Create Tab 2 - All Tickets
-        self.tabWidget.addTab(qtw.QLabel("All tickets go here"), "All Tickets")
+        
         
         self.show()
         
