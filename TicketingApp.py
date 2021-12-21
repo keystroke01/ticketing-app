@@ -17,14 +17,14 @@ import re
 conn = sqlite3.connect("D:\Temp\data.db")
 c = conn.cursor()
 
-c.execute("SELECT * FROM STATUS")
+c.execute("SELECT CODE, DESCRIPTION FROM STATUS")
 status = c.fetchall()
 
-c.execute("SELECT * FROM TICKET_SEVERITY")
+c.execute("SELECT CODE, DESCRIPTION FROM TICKET_SEVERITY")
 ticketSeverity = c.fetchall()
 
-# c.execute("SELECT CODE, DESCRIPTION FROM TICKET_TYPE")
-c.execute("SELECT * FROM TICKET_TYPE")
+# c.execute("SELECT * FROM TICKET_TYPE")
+c.execute("SELECT CODE, DESCRIPTION FROM TICKET_TYPE")
 ticketType = c.fetchall()
 
 print(status)
@@ -56,24 +56,21 @@ class NewTicket(qtw.QWidget):
         
         # Adding items of TICKET_TYPE
         self.ticketType = qtw.QComboBox()
-        ticketTypeList = []
         for item in ticketType:
-            ticketTypeList.append(item[2])
-        self.ticketType.addItems(ticketTypeList)
+            # self.ticketType.addItem(text, data)
+            self.ticketType.addItem(item[1], item[0])
         
         # Adding items of TICKET_SEVERITY
         self.ticketSeverity = qtw.QComboBox()
-        ticketSeverityList = []
         for item in ticketSeverity:
-            ticketSeverityList.append(item[2])
-        self.ticketSeverity.addItems(ticketSeverityList)
+            # self.ticketType.addItem(text, data)
+            self.ticketSeverity.addItem(item[1], item[0])
         
         # Adding items of STATUS
         self.ticketStatus = qtw.QComboBox()
-        statusList = []
         for item in status:
-            statusList.append(item[2])
-        self.ticketStatus.addItems(statusList)
+            # self.ticketType.addItem(text, data)
+            self.ticketStatus.addItem(item[1], item[0])
         
         
         self.submitButton = qtw.QPushButton("Submit",
@@ -130,17 +127,29 @@ class NewTicket(qtw.QWidget):
                 
         else: 
             print("no")
-            # sqlQuery = """
-            # INSERT INTO TICKETS (TITLE, 
-            #                      DESCRIPTION, 
-            #                      REPORTED_DATE, 
-            #                      CLOSED_DATE, 
-            #                      TICKET_TYPE_ID, 
-            #                      TICKET_SEVERITY_ID, 
-            #                      STATUS_ID) VALUES ("""
-            # sqlQuery += f"'{self.ticketTitle.text()}', '{self.ticketDesc.toPlainText()}')"
-            # c.execute(sqlQuery)
-            
+            sqlQuery = f"""
+            INSERT 
+            INTO 
+            TICKETS (TITLE, 
+                     DESCRIPTION, 
+                     REPORTED_DATE, 
+                     CLOSED_DATE, 
+                     TICKET_TYPE_ID, 
+                     TICKET_SEVERITY_ID, 
+                     STATUS_ID) 
+            VALUES ('{self.ticketTitle.text()}', 
+                    '{self.ticketDesc.toPlainText()}',
+                    '{self.reportedDate.text()}',
+                    '{self.closedDate.text()}',
+                    (SELECT TICKET_TYPE_ID FROM TICKET_TYPE 
+                     WHERE CODE = '{self.ticketType.currentData()}'),
+                    (SELECT TICKET_SEVERITY_ID FROM TICKET_SEVERITY 
+                     WHERE CODE = '{self.ticketSeverity.currentData()}'),
+                    (SELECT STATUS_ID FROM STATUS
+                     WHERE CODE = '{self.ticketStatus.currentData()}')
+                    );"""
+            c.execute(sqlQuery)
+            conn.commit()
             print("Row added")
             # self.outputTable.setItem(0,0,qtw.QTableWidgetItem(self.ticketTitle.text()))
             # self.outputTable.setItem(0,1,qtw.QTableWidgetItem(self.ticketDesc.toPlainText()))
