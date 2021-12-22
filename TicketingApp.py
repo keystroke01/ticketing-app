@@ -9,7 +9,7 @@ Created on Fri Dec 17 14:50:14 2021
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
-from os import path
+from os import path, makedirs
 import sqlite3, re, shutil
 
 
@@ -37,8 +37,14 @@ class UpdateTicketWidget(qtw.QWidget):
                                         placeholderText="Description")
         self.reportedDate = qtw.QDateEdit()
         self.reportedDate.setCalendarPopup(True)
+        self.reportedDate.setDate(qtc.QDate.currentDate())
+        self.reportedDate.setDisplayFormat('dd/MMM/yyyy')
         self.closedDate = qtw.QDateEdit()
         self.closedDate.setCalendarPopup(True)
+        self.closedDate.setDate(qtc.QDate.currentDate())
+        self.closedDate.setDisplayFormat('dd/MMM/yyyy')
+        
+        # self.ticketStatus.changeEvent(qtc.QEvent.ActionChanged)
         
         # Adding items of TICKET_TYPE
         self.ticketType = qtw.QComboBox()
@@ -62,6 +68,7 @@ class UpdateTicketWidget(qtw.QWidget):
             self.ticketStatus.addItem(item[1], item[0])
         self.ticketStatus.setCurrentIndex(-1)
         
+        # if self.ticketStatus.currentData() == 
         
         self.attachFilesButton = qtw.QPushButton("Attach Files",
                                                  clicked = lambda: self.attachFiles())
@@ -73,6 +80,13 @@ class UpdateTicketWidget(qtw.QWidget):
                                             clicked = lambda: self.resetTicket())
         self.testButton = qtw.QPushButton("Test",
                                             clicked = lambda: self.testUpload())
+        self.submitButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
+                                                       qtw.QSizePolicy.Fixed))
+        self.resetButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
+                                                       qtw.QSizePolicy.Fixed))
+        self.testButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
+                                                       qtw.QSizePolicy.Fixed))
+        
         
         self.outputTextEdit = qtw.QTextEdit(self,
                                             lineWrapMode=qtw.QTextEdit.FixedColumnWidth,
@@ -85,18 +99,17 @@ class UpdateTicketWidget(qtw.QWidget):
         formLayout.addRow(self.headLabel)
         formLayout.addRow(self.ticketTitle)
         formLayout.addRow(self.ticketDesc)
-        formLayout.addRow("Reported Date", self.reportedDate)
-        formLayout.addRow("Closed Date", self.closedDate)
         formLayout.addRow("Type", self.ticketType)
         formLayout.addRow("Severity", self.ticketSeverity)
         formLayout.addRow("Status", self.ticketStatus)
+        formLayout.addRow("Reported Date", self.reportedDate)
+        formLayout.addRow("Closed Date", self.closedDate)
         formLayout.addRow(self.attachFilesButton, self.attachedFilesListWidget)
         self.hBoxLayout2 = qtw.QHBoxLayout()
         self.hBoxLayout2.addWidget(self.submitButton)
         self.hBoxLayout2.addWidget(self.resetButton)
-        
-        
         self.hBoxLayout2.addWidget(self.testButton)
+        self.hBoxLayout2.setAlignment(qtc.Qt.AlignCenter)
         formLayout.addRow(self.hBoxLayout2)
         formLayout.addRow(self.outputTextEdit)
     
@@ -115,6 +128,10 @@ class UpdateTicketWidget(qtw.QWidget):
             msg.setWindowTitle("Error")
             msg.exec_()
         else: 
+            closedDate = ""
+            if self.ticketStatus.currentData() == 'C':
+                closedDate = self.closedDate.text()
+            
             sqlQuery = f"""
             INSERT 
             INTO 
@@ -128,7 +145,7 @@ class UpdateTicketWidget(qtw.QWidget):
             VALUES ('{self.ticketTitle.text()}', 
                     '{self.ticketDesc.toPlainText()}',
                     '{self.reportedDate.text()}',
-                    '{self.closedDate.text()}',
+                    '{closedDate}',
                     (SELECT TICKET_TYPE_ID FROM TICKET_TYPE 
                      WHERE CODE = '{self.ticketType.currentData()}'),
                     (SELECT TICKET_SEVERITY_ID FROM TICKET_SEVERITY 
@@ -138,12 +155,18 @@ class UpdateTicketWidget(qtw.QWidget):
                     );"""
             self.cur.execute(sqlQuery)
             
-            sqlQuery = ""
+            sqlQuery = "select max(ticket_id) from Tickets"
+            self.cur.execute(sqlQuery)
+            subFolderName = self.cur.fetchone()[0]
+            
             for row in range(self.attachedFilesListWidget.count()):
                 fromPath = self.attachedFilesListWidget.item(row).text()
                 fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
                 fileName = fromPathSplit[len(fromPathSplit) - 1]
-                toPath = "./files/attachments/"+fileName
+                toPath = f"./files/attachments/{subFolderName}"
+                makedirs(toPath, exist_ok=True)
+                toPath += f"/{fileName}"
+                print(toPath)
                 shutil.copy(fromPath,toPath)
                 sqlQuery = f"""
                 INSERT 
@@ -162,7 +185,7 @@ class UpdateTicketWidget(qtw.QWidget):
             output += f"\nTITLE: {self.ticketTitle.text()}"
             output += f"\nDESCRIPTION: {self.ticketDesc.toPlainText()}"
             output += f"\nREPORTED DATE: {self.reportedDate.text()}"
-            output += f"\nCLOSED DATE: {self.closedDate.text()}"
+            output += f"\nCLOSED DATE: {closedDate}"
             output += f"\nTYPE: {self.ticketType.currentText()}"
             output += f"\nSEVERITY: {self.ticketSeverity.currentText()}"
             output += f"\nSTATUS: {self.ticketStatus.currentText()}"
@@ -177,11 +200,14 @@ class UpdateTicketWidget(qtw.QWidget):
         # Clear the input values
         self.ticketTitle.clear()
         self.ticketDesc.clear()
-        self.reportedDate.clear()
-        self.closedDate.clear()
+        self.reportedDate.setDate(qtc.QDate.currentDate())
+        self.closedDate.setDate(qtc.QDate.currentDate())
         self.ticketType.setCurrentIndex(-1)
         self.ticketSeverity.setCurrentIndex(-1)
         self.ticketStatus.setCurrentIndex(-1)
+        
+        for row in range(self.attachedFilesListWidget.count()):
+            self.attachedFilesListWidget.takeItem(row)
 
     def attachFiles(self):
         self.fileDialogBox.open()
@@ -190,19 +216,22 @@ class UpdateTicketWidget(qtw.QWidget):
         # print(fileName[0])
     
     def testUpload(self):
-        for row in range(self.attachedFilesListWidget.count()):
-           fromPath = self.attachedFilesListWidget.item(row).text()
-           fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
-           fileName = fromPathSplit[len(fromPathSplit) - 1]
-           toPath = "./files/attachments/"+fileName
-           sqlQuery = "select max(ticket_id) from Tickets"
-           shutil.copy(fromPath,toPath)
-           
-            
-            
-            
-            
+        # for row in range(self.attachedFilesListWidget.count()):
+        #    fromPath = self.attachedFilesListWidget.item(row).text()
+        #    fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
+        #    fileName = fromPathSplit[len(fromPathSplit) - 1]
+        #    sqlQuery = "select max(ticket_id) from Tickets"
+        #    self.cur.execute(sqlQuery)
+        #    subFolderName = self.cur.fetchone()[0]
+        #    toPath = f"./files/attachments/{subFolderName}"
+        #    makedirs(toPath, exist_ok=True)
+        #    toPath += f"/{fileName}"
+        #    print(toPath)
+        #    shutil.copy(fromPath,toPath)
         
+        print(self.ticketStatus.currentData())
+           
+     
 class QueryTicketsWidget(qtw.QWidget):
     def __init__(self, ticketType, ticketSeverity, ticketStatus, conn, cur):
         super().__init__()
@@ -249,7 +278,12 @@ class QueryTicketsWidget(qtw.QWidget):
                                             clicked = lambda: self.resetQuery())
         self.upateButton = qtw.QPushButton("Update Selected Ticket",
                                             clicked = lambda: self.updateSelectedTicket())
-        
+        self.queryButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
+                                                       qtw.QSizePolicy.Fixed))
+        self.resetButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
+                                                       qtw.QSizePolicy.Fixed))
+        self.upateButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
+                                                       qtw.QSizePolicy.Fixed))
         self.updateTicketWidget = UpdateTicketWidget(ticketType,
                                                      ticketSeverity,
                                                      ticketStatus,
@@ -280,6 +314,7 @@ class QueryTicketsWidget(qtw.QWidget):
         self.hBoxLayout1.addWidget(self.queryButton)
         self.hBoxLayout1.addWidget(self.resetButton)
         self.hBoxLayout1.addWidget(self.upateButton)
+        self.hBoxLayout1.setAlignment(qtc.Qt.AlignCenter)
         
         self.outputTable = qtw.QTableWidget(self) 
         self.outputTable.setEditTriggers(qtw.QTableWidget.NoEditTriggers)
@@ -300,6 +335,8 @@ class QueryTicketsWidget(qtw.QWidget):
         self.outputTextEdit.show()
         self.outputTable.hide()
         self.updateTicketWidget.hide()
+        
+        self.cols = []
         
     def queryTickets(self):
         query = "SELECT * FROM V_TICKETS"
@@ -324,20 +361,20 @@ class QueryTicketsWidget(qtw.QWidget):
             query += queryFilter
         # print(query)
         queryResult = self.cur.execute(query)
-        cols = []
+        self.cols = []
         for desc in queryResult.description:
-            cols.append(desc[0])
-        # print(cols)
+            self.cols.append(desc[0])
+        # print(self.cols)
         # print(queryResult.fetchall())
         rows = queryResult.fetchall()
         # print(rows)
         if len(rows) != 0:
             self.outputTextEdit.hide()
             self.outputTable.setRowCount(len(rows))
-            self.outputTable.setColumnCount(len(cols))
-            self.outputTable.setHorizontalHeaderLabels(cols)
+            self.outputTable.setColumnCount(len(self.cols))
+            self.outputTable.setHorizontalHeaderLabels(self.cols)
             for i in range(0,len(rows)):
-                for j in range(0,len(cols)):
+                for j in range(0,len(self.cols)):
                     self.outputTable.setItem(i, j, qtw.QTableWidgetItem(rows[i][j]))
                     # print(len(qtw.QTableWidgetItem(rows[i][j]).text()))
             self.outputTable.setWordWrap(True)
@@ -362,8 +399,33 @@ class QueryTicketsWidget(qtw.QWidget):
 
     def updateSelectedTicket(self):
         if len(self.outputTable.selectedItems()) > 0:
+            self.updateTicketWidget.submitButton.setText("Update")
+            rowItems = self.outputTable.selectedItems()
+            for i in range(len(self.cols)):
+                rowItemStr = rowItems[i].text()
+                print(rowItemStr)
+                if i == 1: # TITLE
+                    self.updateTicketWidget.ticketTitle.setText(rowItemStr) 
+                elif i == 2: # DESCRIPTION
+                    self.updateTicketWidget.ticketDesc.setText(rowItemStr)
+                elif i == 3: # Ticket Type
+                    for ticketTypeIndex in range(len(ticketType)):
+                        if ticketType[ticketTypeIndex][1] == rowItemStr:
+                            self.updateTicketWidget.ticketType.setCurrentIndex(ticketTypeIndex)  
+                elif i == 4: # Ticket Severity
+                    for ticketSeverityIndex in range(len(ticketSeverity)):
+                        if ticketSeverity[ticketSeverityIndex][1] == rowItemStr:
+                            self.updateTicketWidget.ticketSeverity.setCurrentIndex(ticketSeverityIndex)
+                elif i == 5: # Ticket Status
+                    for ticketStatusIndex in range(len(ticketStatus)):
+                        if ticketStatus[ticketStatusIndex][1] == rowItemStr:
+                            self.updateTicketWidget.ticketStatus.setCurrentIndex(ticketStatusIndex)  
+                elif i == 6: # Reported Date
+                    self.updateTicketWidget.reportedDate.setDate(qtc.QDate.fromString(rowItemStr, 'dd/MMM/yyyy'))
+                elif i == 7: # Closed Date
+                    self.updateTicketWidget.closedDate.setDate(qtc.QDate.fromString(rowItemStr, 'dd/MMM/yyyy'))
+                    
             self.updateTicketWidget.show()
-            return self.outputTable.selectedItems()[0]
         
         
     
