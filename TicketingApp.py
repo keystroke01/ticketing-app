@@ -71,7 +71,7 @@ class UpdateTicketWidget(qtw.QWidget):
                                             clicked = lambda: self.addUpdateTicket())
         self.resetButton = qtw.QPushButton("Reset",
                                             clicked = lambda: self.resetTicket())
-        self.testButton = qtw.QPushButton("Reset",
+        self.testButton = qtw.QPushButton("Test",
                                             clicked = lambda: self.testUpload())
         
         self.outputTextEdit = qtw.QTextEdit(self,
@@ -195,14 +195,9 @@ class UpdateTicketWidget(qtw.QWidget):
            fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
            fileName = fromPathSplit[len(fromPathSplit) - 1]
            toPath = "./files/attachments/"+fileName
+           sqlQuery = "select max(ticket_id) from Tickets"
            shutil.copy(fromPath,toPath)
-           sqlQuery = f"""
-           INSERT 
-           INTO 
-           TICKET_ATTACHMENTS(ATTACHMENT_PATH,TICKET_ID)
-           VALUES(''
-               );
-           """ 
+           
             
             
             
@@ -252,7 +247,14 @@ class QueryTicketsWidget(qtw.QWidget):
                                             clicked = lambda: self.queryTickets())
         self.resetButton = qtw.QPushButton("Reset",
                                             clicked = lambda: self.resetQuery())
-       
+        self.upateButton = qtw.QPushButton("Update Selected Ticket",
+                                            clicked = lambda: self.updateSelectedTicket())
+        
+        self.updateTicketWidget = UpdateTicketWidget(ticketType,
+                                                     ticketSeverity,
+                                                     ticketStatus,
+                                                     conn,
+                                                     cur)
         
         self.gridLayout1 = qtw.QGridLayout()
         
@@ -277,6 +279,7 @@ class QueryTicketsWidget(qtw.QWidget):
         self.hBoxLayout1 = qtw.QHBoxLayout()
         self.hBoxLayout1.addWidget(self.queryButton)
         self.hBoxLayout1.addWidget(self.resetButton)
+        self.hBoxLayout1.addWidget(self.upateButton)
         
         self.outputTable = qtw.QTableWidget(self) 
         self.outputTable.setEditTriggers(qtw.QTableWidget.NoEditTriggers)
@@ -293,10 +296,10 @@ class QueryTicketsWidget(qtw.QWidget):
         vLayout.addLayout(formLayout)
         vLayout.addWidget(self.outputTable)
         vLayout.addWidget(self.outputTextEdit)
-        
+        vLayout.addWidget(self.updateTicketWidget)
         self.outputTextEdit.show()
         self.outputTable.hide()
-        
+        self.updateTicketWidget.hide()
         
     def queryTickets(self):
         query = "SELECT * FROM V_TICKETS"
@@ -327,7 +330,7 @@ class QueryTicketsWidget(qtw.QWidget):
         # print(cols)
         # print(queryResult.fetchall())
         rows = queryResult.fetchall()
-        
+        # print(rows)
         if len(rows) != 0:
             self.outputTextEdit.hide()
             self.outputTable.setRowCount(len(rows))
@@ -336,11 +339,14 @@ class QueryTicketsWidget(qtw.QWidget):
             for i in range(0,len(rows)):
                 for j in range(0,len(cols)):
                     self.outputTable.setItem(i, j, qtw.QTableWidgetItem(rows[i][j]))
+                    # print(len(qtw.QTableWidgetItem(rows[i][j]).text()))
             self.outputTable.setWordWrap(True)
             self.outputTable.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+            self.outputTable.setSelectionBehavior(qtw.QTableView.SelectRows)
             self.outputTable.show()
         else:
             self.outputTable.hide()
+            self.updateTicketWidget.hide()
             self.outputTextEdit.setPlaceholderText("No records found")
             self.outputTextEdit.show()
             
@@ -350,12 +356,16 @@ class QueryTicketsWidget(qtw.QWidget):
         self.ticketSeverity.setCurrentIndex(-1)
         self.ticketStatus.setCurrentIndex(-1)
         self.outputTable.hide()
+        self.updateTicketWidget.hide()
         self.outputTextEdit.setPlaceholderText("")
         self.outputTextEdit.show()
 
-    def updateTicket(self):
+    def updateSelectedTicket(self):
+        if len(self.outputTable.selectedItems()) > 0:
+            self.updateTicketWidget.show()
+            return self.outputTable.selectedItems()[0]
         
-        pass
+        
     
     
 class MainWindow(qtw.QMainWindow):
@@ -364,8 +374,8 @@ class MainWindow(qtw.QMainWindow):
         self.conn = conn
         self.c = cur
         self.setWindowTitle("Ticketing App")
-        self.setBaseSize(qtc.QSize(1200,500))
-        self.setMinimumSize(qtc.QSize(1200,500))
+        self.setBaseSize(qtc.QSize(1920,1080))
+        self.setMinimumSize(qtc.QSize(1920,1080))
         
         #Tab Widget is the central widget
         self.tabWidget = qtw.QTabWidget()
@@ -376,7 +386,7 @@ class MainWindow(qtw.QMainWindow):
         self.tabWidget.addTab(self.queryTickets, "Query Tickets")
         # Create Tab 3 - New Ticket
         self.updateTicket = UpdateTicketWidget(ticketType, ticketSeverity, ticketStatus, conn, cur)
-        self.tabWidget.addTab(self.updateTicket, "Create/Update a Ticket")
+        self.tabWidget.addTab(self.updateTicket, "Create a new Ticket")
         self.setCentralWidget(self.tabWidget)
         
         self.show()
@@ -398,6 +408,10 @@ if __name__== "__main__":
         cur.execute("SELECT CODE, DESCRIPTION FROM TICKET_TYPE")
         ticketType = cur.fetchall()
         mainWindow = MainWindow(ticketType, ticketSeverity, ticketStatus, conn, cur)
+        
+        # if mainWindow.queryTickets.upateButton.clicked():
+        #     mainWindow.tabWidget.setCurrentIndex(1)
+        
         app.exec_()
         conn.commit()
         conn.close()
