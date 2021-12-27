@@ -28,7 +28,7 @@ class UpdateTicketWidget(qtw.QWidget):
         self.headLabel.setFont(qtg.QFont("Arial", 14))
         self.headLabel.setAlignment(qtc.Qt.AlignCenter)
         
-        
+        self.ticketID = ""
         self.ticketTitle = qtw.QLineEdit(self)
         self.ticketTitle.setPlaceholderText("Title")
         self.ticketDesc = qtw.QTextEdit(self,
@@ -113,85 +113,112 @@ class UpdateTicketWidget(qtw.QWidget):
         formLayout.addRow(self.hBoxLayout2)
         formLayout.addRow(self.outputTextEdit)
     
-    
-    
     # Method to add a new ticket to the database    
     def addUpdateTicket(self):
+        closedDate = ""
+        if self.ticketStatus.currentData() == 'C':
+            closedDate = self.closedDate.text()
         
-        # Check if the title is empty
-        if(re.search("^\s*$", self.ticketTitle.text())): 
-            err = "Title is empty or contains only spaces. Please enter a valid Title."
-            # print(err)
-            msg = qtw.QMessageBox()
-            msg.setIcon(qtw.QMessageBox.Critical)
-            msg.setText(err)
-            msg.setWindowTitle("Error")
-            msg.exec_()
-        else: 
-            closedDate = ""
-            if self.ticketStatus.currentData() == 'C':
-                closedDate = self.closedDate.text()
-            
-            sqlQuery = f"""
-            INSERT 
-            INTO 
-            TICKETS (TITLE, 
-                     DESCRIPTION, 
-                     REPORTED_DATE, 
-                     CLOSED_DATE, 
-                     TICKET_TYPE_ID, 
-                     TICKET_SEVERITY_ID, 
-                     STATUS_ID) 
-            VALUES ('{self.ticketTitle.text()}', 
-                    '{self.ticketDesc.toPlainText()}',
-                    '{self.reportedDate.text()}',
-                    '{closedDate}',
-                    (SELECT TICKET_TYPE_ID FROM TICKET_TYPE 
-                     WHERE CODE = '{self.ticketType.currentData()}'),
-                    (SELECT TICKET_SEVERITY_ID FROM TICKET_SEVERITY 
-                     WHERE CODE = '{self.ticketSeverity.currentData()}'),
-                    (SELECT STATUS_ID FROM STATUS
-                     WHERE CODE = '{self.ticketStatus.currentData()}')
-                    );"""
-            self.cur.execute(sqlQuery)
-            
-            sqlQuery = "select max(ticket_id) from Tickets"
-            self.cur.execute(sqlQuery)
-            subFolderName = self.cur.fetchone()[0]
-            
-            for row in range(self.attachedFilesListWidget.count()):
-                fromPath = self.attachedFilesListWidget.item(row).text()
-                fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
-                fileName = fromPathSplit[len(fromPathSplit) - 1]
-                toPath = f"./files/attachments/{subFolderName}"
-                makedirs(toPath, exist_ok=True)
-                toPath += f"/{fileName}"
-                print(toPath)
-                shutil.copy(fromPath,toPath)
+        if self.ticketID == "":
+            # Check if the title is empty
+            if(re.search("^\s*$", self.ticketTitle.text())): 
+                err = "Title is empty or contains only spaces. Please enter a valid Title."
+                # print(err)
+                msg = qtw.QMessageBox()
+                msg.setIcon(qtw.QMessageBox.Critical)
+                msg.setText(err)
+                msg.setWindowTitle("Error")
+                msg.exec_()
+            else: 
+                # Add a new ticket
                 sqlQuery = f"""
                 INSERT 
                 INTO 
-                TICKET_ATTACHMENTS(ATTACHMENT_PATH,TICKET_ID)
-                VALUES('{toPath}',
-                       (SELECT MAX(TICKET_ID) FROM TICKETS)
-                    );
-                """ 
+                TICKETS (TITLE, 
+                         DESCRIPTION, 
+                         REPORTED_DATE, 
+                         CLOSED_DATE, 
+                         TICKET_TYPE_ID, 
+                         TICKET_SEVERITY_ID, 
+                         STATUS_ID) 
+                VALUES ('{self.ticketTitle.text()}', 
+                        '{self.ticketDesc.toPlainText()}',
+                        '{self.reportedDate.text()}',
+                        '{closedDate}',
+                        (SELECT TICKET_TYPE_ID FROM TICKET_TYPE 
+                         WHERE CODE = '{self.ticketType.currentData()}'),
+                        (SELECT TICKET_SEVERITY_ID FROM TICKET_SEVERITY 
+                         WHERE CODE = '{self.ticketSeverity.currentData()}'),
+                        (SELECT STATUS_ID FROM STATUS
+                         WHERE CODE = '{self.ticketStatus.currentData()}')
+                        );"""
                 self.cur.execute(sqlQuery)
+                
+                sqlQuery = "select max(ticket_id) from Tickets"
+                self.cur.execute(sqlQuery)
+                subFolderName = self.cur.fetchone()[0]
+                
+                for row in range(self.attachedFilesListWidget.count()):
+                    fromPath = self.attachedFilesListWidget.item(row).text()
+                    fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
+                    fileName = fromPathSplit[len(fromPathSplit) - 1]
+                    toPath = f"./files/attachments/{subFolderName}"
+                    makedirs(toPath, exist_ok=True)
+                    toPath += f"/{fileName}"
+                    print(toPath)
+                    shutil.copy(fromPath,toPath)
+                    sqlQuery = f"""
+                    INSERT 
+                    INTO 
+                    TICKET_ATTACHMENTS(ATTACHMENT_PATH,TICKET_ID)
+                    VALUES('{toPath}',
+                           (SELECT MAX(TICKET_ID) FROM TICKETS)
+                        );
+                    """ 
+                    self.cur.execute(sqlQuery)
+                self.conn.commit()
+                # print("Row added")
+                
+                output = "A new ticket has been created with the following details:"
+                output += "\n---------------------------------------------------------"
+                output += f"\nTITLE: {self.ticketTitle.text()}"
+                output += f"\nDESCRIPTION: {self.ticketDesc.toPlainText()}"
+                output += f"\nREPORTED DATE: {self.reportedDate.text()}"
+                output += f"\nCLOSED DATE: {closedDate}"
+                output += f"\nTYPE: {self.ticketType.currentText()}"
+                output += f"\nSEVERITY: {self.ticketSeverity.currentText()}"
+                output += f"\nSTATUS: {self.ticketStatus.currentText()}"
+                
+                self.outputTextEdit.setText(output)       
+            
+        else:
+            # Update the selected Record
+            sqlQuery = f"""
+            UPDATE 
+                TICKETS 
+            SET
+                TITLE = '{self.ticketTitle.text()}',
+                DESCRIPTION = '{self.ticketDesc.toPlainText()}',
+                TICKET_TYPE_ID = (SELECT TICKET_TYPE_ID FROM TICKET_TYPE
+                                  WHERE 
+                                  CODE = '{self.ticketType.currentData()}'),   
+                TICKET_SEVERITY_ID = (SELECT TICKET_SEVERITY_ID FROM TICKET_SEVERITY 
+                                      WHERE 
+                                      CODE = '{self.ticketSeverity.currentData()}'),
+                STATUS_ID = (SELECT STATUS_ID FROM STATUS
+                             WHERE 
+                             CODE = '{self.ticketStatus.currentData()}'),
+                REPORTED_DATE = '{self.reportedDate.text()}',
+                CLOSED_DATE = '{closedDate}'
+            
+            WHERE 
+                TICKET_ID = {self.ticketID};
+            """
+            
+            self.cur.execute(sqlQuery)
             self.conn.commit()
-            # print("Row added")
-            
-            output = "A new ticket has been created with the following details:"
-            output += "\n---------------------------------------------------------"
-            output += f"\nTITLE: {self.ticketTitle.text()}"
-            output += f"\nDESCRIPTION: {self.ticketDesc.toPlainText()}"
-            output += f"\nREPORTED DATE: {self.reportedDate.text()}"
-            output += f"\nCLOSED DATE: {closedDate}"
-            output += f"\nTYPE: {self.ticketType.currentText()}"
-            output += f"\nSEVERITY: {self.ticketSeverity.currentText()}"
-            output += f"\nSTATUS: {self.ticketStatus.currentText()}"
-            
-            self.outputTextEdit.setText(output)       
-            
+                
+                
             # Clear the input values
             self.resetTicket()
     
@@ -276,13 +303,13 @@ class QueryTicketsWidget(qtw.QWidget):
                                             clicked = lambda: self.queryTickets())
         self.resetButton = qtw.QPushButton("Reset",
                                             clicked = lambda: self.resetQuery())
-        self.upateButton = qtw.QPushButton("Update Selected Ticket",
+        self.updateButton = qtw.QPushButton("Update Selected Ticket",
                                             clicked = lambda: self.updateSelectedTicket())
         self.queryButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
                                                        qtw.QSizePolicy.Fixed))
         self.resetButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
                                                        qtw.QSizePolicy.Fixed))
-        self.upateButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
+        self.updateButton.setSizePolicy(qtw.QSizePolicy(qtw.QSizePolicy.Fixed,
                                                        qtw.QSizePolicy.Fixed))
         self.updateTicketWidget = UpdateTicketWidget(ticketType,
                                                      ticketSeverity,
@@ -313,11 +340,12 @@ class QueryTicketsWidget(qtw.QWidget):
         self.hBoxLayout1 = qtw.QHBoxLayout()
         self.hBoxLayout1.addWidget(self.queryButton)
         self.hBoxLayout1.addWidget(self.resetButton)
-        self.hBoxLayout1.addWidget(self.upateButton)
+        self.hBoxLayout1.addWidget(self.updateButton)
         self.hBoxLayout1.setAlignment(qtc.Qt.AlignCenter)
         
         self.outputTable = qtw.QTableWidget(self) 
         self.outputTable.setEditTriggers(qtw.QTableWidget.NoEditTriggers)
+        # self.outputTable.adjustSize()
         
         self.outputTextEdit = qtw.QTextEdit(self,
                                             lineWrapMode=qtw.QTextEdit.FixedColumnWidth,
@@ -330,6 +358,7 @@ class QueryTicketsWidget(qtw.QWidget):
         formLayout.addRow(self.hBoxLayout1)
         vLayout.addLayout(formLayout)
         vLayout.addWidget(self.outputTable)
+        # vLayout.addWidget(self.updateButton)
         vLayout.addWidget(self.outputTextEdit)
         vLayout.addWidget(self.updateTicketWidget)
         self.outputTextEdit.show()
@@ -381,11 +410,15 @@ class QueryTicketsWidget(qtw.QWidget):
             self.outputTable.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
             self.outputTable.setSelectionBehavior(qtw.QTableView.SelectRows)
             self.outputTable.show()
+            self.updateTicketWidget.hide()
         else:
             self.outputTable.hide()
             self.updateTicketWidget.hide()
             self.outputTextEdit.setPlaceholderText("No records found")
             self.outputTextEdit.show()
+            
+        
+        
             
 
     def resetQuery(self):
@@ -404,7 +437,9 @@ class QueryTicketsWidget(qtw.QWidget):
             for i in range(len(self.cols)):
                 rowItemStr = rowItems[i].text()
                 print(rowItemStr)
-                if i == 1: # TITLE
+                if i == 0:
+                    self.updateTicketWidget.ticketID = rowItemStr
+                elif i == 1: # TITLE
                     self.updateTicketWidget.ticketTitle.setText(rowItemStr) 
                 elif i == 2: # DESCRIPTION
                     self.updateTicketWidget.ticketDesc.setText(rowItemStr)
@@ -426,8 +461,9 @@ class QueryTicketsWidget(qtw.QWidget):
                     self.updateTicketWidget.closedDate.setDate(qtc.QDate.fromString(rowItemStr, 'dd/MMM/yyyy'))
                     
             self.updateTicketWidget.show()
-        
-        
+            
+            
+            
     
     
 class MainWindow(qtw.QMainWindow):
@@ -436,8 +472,8 @@ class MainWindow(qtw.QMainWindow):
         self.conn = conn
         self.c = cur
         self.setWindowTitle("Ticketing App")
-        self.setBaseSize(qtc.QSize(1920,1080))
-        self.setMinimumSize(qtc.QSize(1920,1080))
+        self.setBaseSize(qtc.QSize(1366,768))
+        self.setMinimumSize(qtc.QSize(1366,768))
         
         #Tab Widget is the central widget
         self.tabWidget = qtw.QTabWidget()
