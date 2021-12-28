@@ -544,7 +544,9 @@ if __name__== "__main__":
         cur.execute("SELECT CODE, DESCRIPTION FROM TICKET_TYPE")
         ticketType = cur.fetchall()
         mainWindow = MainWindow(ticketType, ticketSeverity, ticketStatus, conn, cur)
-         
+        icon = qtg.QIcon()
+        icon.addFile("./resources/icon.png")
+        app.setWindowIcon(icon)
         app.exec_()
         conn.commit()
         conn.close()
