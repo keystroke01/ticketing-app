@@ -10,7 +10,7 @@ from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
 from os import path, makedirs
-import sqlite3, re, shutil
+import sqlite3, re, shutil, sys
 
 
 class UpdateTicketWidget(qtw.QWidget):
@@ -528,12 +528,13 @@ class MainWindow(qtw.QMainWindow):
         
         self.show()
     
-        
+      
 if __name__== "__main__":
     filePath = ("./files/data.db")
     if path.exists(filePath):
         # Start the app
-        app = qtw.QApplication([])
+        
+        # app = qtg.QGuiApplication([])
         # Open the database and connect to it
         conn = sqlite3.connect(filePath)
         cur = conn.cursor()
@@ -544,6 +545,7 @@ if __name__== "__main__":
         cur.execute("SELECT CODE, DESCRIPTION FROM TICKET_TYPE")
         ticketType = cur.fetchall()
         mainWindow = MainWindow(ticketType, ticketSeverity, ticketStatus, conn, cur)
+        app = qtw.QApplication(sys.argv)  
         icon = qtg.QIcon()
         icon.addFile("./resources/icon.png")
         app.setWindowIcon(icon)
@@ -552,10 +554,11 @@ if __name__== "__main__":
         conn.close()
     else:
         # print("False")
+        app = qtw.QApplication(sys.argv)  
         err = "Database file does not exist"
         msg = qtw.QMessageBox()
         msg.setIcon(qtw.QMessageBox.Critical)
         msg.setText(err)
         msg.setWindowTitle("Error !")
-        msg.exec_()
+        sys.exit(msg.exec_())
 
