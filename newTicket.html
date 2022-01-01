@@ -9,54 +9,60 @@
 </head>
 
 <body>
+    <div class="topnav">
+        <a class="active" href="newTicket.html">New Ticket</a>
+        <a href="newTicket.html">Search Tickets</a>
+    </div>
     
-    <div id="outer-block">
-        <h2>Enter the details below</h2>
-        <hr><br>
-        <div id="title-desc-block" name="title-desc-block">
-            <input type="text" id="ticket-title" name="ticket-title" placeholder="Title">
-            <br><br>
-            <textarea id="ticket-description" name="ticket-description" rows="10vw" cols="65vw"
-                placeholder="Description"></textarea>
-        </div>
-        <br>
-        <div id="buttons-block" class="buttons-block">
-            <label for="reported-date">Reported Date</label>
-            <input type="date" id="reported-date" name="reported-date">
-            <label for="closed-date">Closed Date</label>
-            <input type="date" id="closed-date" name="closed-date">
-        </div>
-        <br>
-        <div id="selection-block" class="selection-block">
-            <label for="ticket-type">Type</label>
-            <select id="ticket-type" name="ticket-type">
-                <option value="bug">Bug</option>
-                <option value="user-assistance">User Assistance</option>
-            </select>
-            <label for="ticket-severity">Severity</label>
-            <select id="ticket-severity" name="ticket-severity">
-                <option value="minor">Minor</option>
-                <option value="major">Major</option>
-            </select>
-            <label for="ticket-status">Status</label>
-            <select id="ticket-status" name="ticket-status">
-                <option value="open">Open</option>
-                <option value="in-progress">In Progress</option>
-                <option value="awaiting-deployment">Awaiting Deployment</option>
-                <option value="closed">Closed</option>
-            </select>
-        </div>
-        <br>
-        <div id="buttons-block" name="buttons-block">
-            <button id="new-ticket-submit-button" name="new-ticket-submit-button">Submit</button>
-            <button id="new-ticket-reset-button" name="new-ticket-reset-button">Reset</button>
-        </div>
-        <br>
-        <br>
-        <textarea id="output-textarea" placeholder="Output" rows="10vw" cols="65vw"></textarea>
+    <div id="outer-block" align='center'>
+        <form>
+            <h2>Enter the details below</h2>
+            <hr><br>
+            <div id="title-desc-block" name="title-desc-block">
+                <input type="text" id="ticket-title" name="ticket-title" placeholder="Title">
+                <br><br>
+                <textarea id="ticket-description" name="ticket-description" rows="10vw" cols="65vw"
+                    placeholder="Description"></textarea>
+            </div>
+            <br>
+            <div id="buttons-block" class="buttons-block">
+                <label for="reported-date">Reported Date</label>
+                <input type="date" id="reported-date" name="reported-date">
+                <label for="closed-date">Closed Date</label>
+                <input type="date" id="closed-date" name="closed-date">
+            </div>
+            <br>
+            <div id="selection-block" class="selection-block">
+                <label for="ticket-type">Type</label>
+                <select id="ticket-type" name="ticket-type">
+                    <option value="bug">Bug</option>
+                    <option value="user-assistance">User Assistance</option>
+                </select>
+                <label for="ticket-severity">Severity</label>
+                <select id="ticket-severity" name="ticket-severity">
+                    <option value="minor">Minor</option>
+                    <option value="major">Major</option>
+                </select>
+                <label for="ticket-status">Status</label>
+                <select id="ticket-status" name="ticket-status">
+                    <option value="open">Open</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="awaiting-deployment">Awaiting Deployment</option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
+            <br>
+            <div id="buttons-block" name="buttons-block">
+                <button type="button" id="submit-button" name="new-ticket-submit-button"
+                    class="btn-success">Submit</button>
+                <button type="button" id="reset-button" name="new-ticket-reset-button" class="btn-danger">Reset</button>
+            </div>
+            <br>
+            <br>
+            <textarea id="output-textarea" placeholder="Output" rows="10vw" cols="65vw"></textarea>
 
-        <script src="./script.js"></script>
-
+            <script src="./script.js"></script>
+        </form>
     </div>
 
 </body>
