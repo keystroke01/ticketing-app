@@ -1,3 +1,7 @@
 files/**
 temp/**
+<<<<<<< HEAD
 __pycache__/**
+=======
+.vscode/**
+>>>>>>> 7a6af4c218c34fc2b0e6c336de18dbe04c016e20
