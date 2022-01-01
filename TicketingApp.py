@@ -472,8 +472,6 @@ class QueryTicketsWidget(qtw.QWidget):
 
     def updateSelectedTicket(self):
         if len(self.outputTable.selectedItems()) > 0:
-            self.updateTicketWidget.submitButton.hide()
-            self.updateTicketWidget.updateButton.show()
             rowItems = self.outputTable.selectedItems()
             for i in range(len(self.cols)):
                 rowItemStr = rowItems[i].text()
@@ -500,7 +498,11 @@ class QueryTicketsWidget(qtw.QWidget):
                     self.updateTicketWidget.reportedDate.setDate(qtc.QDate.fromString(rowItemStr, 'dd/MMM/yyyy'))
                 elif i == 7: # Closed Date
                     self.updateTicketWidget.closedDate.setDate(qtc.QDate.fromString(rowItemStr, 'dd/MMM/yyyy'))
-                    
+            
+            self.updateTicketWidget.outputTextEdit.clear()
+            self.updateTicketWidget.formLayoutWidget.show()
+            self.updateTicketWidget.submitButton.hide()
+            self.updateTicketWidget.updateButton.show()        
             self.updateTicketWidget.show()
             self.toolBox.setCurrentIndex(1)
             
@@ -514,27 +516,63 @@ class MainWindow(qtw.QMainWindow):
         self.setBaseSize(qtc.QSize(1366,768))
         self.setMinimumSize(qtc.QSize(1366,768))
         
-        #Tab Widget is the central widget
-        self.tabWidget = qtw.QTabWidget()
-        self.tabWidget.setObjectName("tabWidget")
+        self.menuBar = qtw.QMenuBar()
+        self.setMenuBar(self.menuBar)
         
-        # Create Tab 1 - All Tickets
+        self.menuFile = qtw.QMenu()
+        self.menuFile.setTitle("File")
+        self.mfNewTicketAction = qtw.QAction()
+        self.mfNewTicketAction.setText("New Ticket")
+        self.mfQueryTicketAction = qtw.QAction()
+        self.mfQueryTicketAction.setText("Query Ticket")
+        self.menuFile.addActions([self.mfNewTicketAction, self.mfQueryTicketAction])
+
+        self.menuHelp = qtw.QMenu()
+        self.menuHelp.setTitle("Help")
+        self.mhAboutAction = qtw.QAction()
+        self.mhAboutAction.setText("About")
+        self.menuHelp.addActions([self.mhAboutAction])
+
+        self.menuBar.addMenu(self.menuFile)
+        self.menuBar.addMenu(self.menuHelp)
+
+
+        self.menuFile.triggered[qtw.QAction].connect(self.processTrigger)
+        self.menuHelp.triggered[qtw.QAction].connect(self.processTrigger)
+
+        
+        
+        self.centralWidget = qtw.QWidget()
+        
         self.queryTickets = QueryTicketsWidget(ticketType, ticketSeverity, ticketStatus, conn, cur)
-        self.tabWidget.addTab(self.queryTickets, "Query Tickets")
-        # Create Tab 3 - New Ticket
         self.updateTicket = UpdateTicketWidget(ticketType, ticketSeverity, ticketStatus, conn, cur)
-        self.tabWidget.addTab(self.updateTicket, "Create a new Ticket")
-        self.setCentralWidget(self.tabWidget)
+
+        self.queryTickets.hide()
+        self.updateTicket.show()
+
+        self.vBoxLayout = qtw.QVBoxLayout()
+        self.vBoxLayout.addWidget(self.queryTickets)
+        self.vBoxLayout.addWidget(self.updateTicket)
+        
+        self.centralWidget.setLayout(self.vBoxLayout)
+        self.setCentralWidget(self.centralWidget)
         
         self.show()
     
+    def processTrigger(self, q):
+        print(q.text())
+        if q.text() == "New Ticket":
+            self.queryTickets.hide()
+            self.updateTicket.show()
+        elif q.text() == "Query Ticket":
+            self.queryTickets.show()
+            self.updateTicket.hide()
       
 if __name__== "__main__":
     filePath = ("./files/data.db")
     if path.exists(filePath):
         # Start the app
-        
-        # app = qtg.QGuiApplication([])
+        app = qtw.QApplication(sys.argv) 
         # Open the database and connect to it
         conn = sqlite3.connect(filePath)
         cur = conn.cursor()
@@ -545,7 +583,7 @@ if __name__== "__main__":
         cur.execute("SELECT CODE, DESCRIPTION FROM TICKET_TYPE")
         ticketType = cur.fetchall()
         mainWindow = MainWindow(ticketType, ticketSeverity, ticketStatus, conn, cur)
-        app = qtw.QApplication(sys.argv)  
+         
         icon = qtg.QIcon()
         icon.addFile("./resources/icon.png")
         app.setWindowIcon(icon)
