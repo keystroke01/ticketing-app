@@ -536,11 +536,8 @@ class MainWindow(qtw.QMainWindow):
         self.menuBar.addMenu(self.menuFile)
         self.menuBar.addMenu(self.menuHelp)
 
-
         self.menuFile.triggered[qtw.QAction].connect(self.processTrigger)
         self.menuHelp.triggered[qtw.QAction].connect(self.processTrigger)
-
-        
         
         self.centralWidget = qtw.QWidget()
         
@@ -553,9 +550,9 @@ class MainWindow(qtw.QMainWindow):
         self.vBoxLayout = qtw.QVBoxLayout()
         self.vBoxLayout.addWidget(self.queryTickets)
         self.vBoxLayout.addWidget(self.updateTicket)
-        
         self.centralWidget.setLayout(self.vBoxLayout)
         self.setCentralWidget(self.centralWidget)
+
         
         self.show()
     
@@ -567,6 +564,13 @@ class MainWindow(qtw.QMainWindow):
         elif q.text() == "Query Ticket":
             self.queryTickets.show()
             self.updateTicket.hide()
+        else: # About
+            msg = qtw.QMessageBox()
+            msg.setIcon(qtw.QMessageBox.Information)
+            aboutText = """Ticketing App\nCreated using PyQt5\nAuthor: SK"""
+            msg.setText(aboutText)
+            msg.setWindowTitle("About")
+            msg.exec_()
       
 if __name__== "__main__":
     filePath = ("./files/data.db")
@@ -598,5 +602,6 @@ if __name__== "__main__":
         msg.setIcon(qtw.QMessageBox.Critical)
         msg.setText(err)
         msg.setWindowTitle("Error !")
+        app.exec_()
         sys.exit(msg.exec_())
 
