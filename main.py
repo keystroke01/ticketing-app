@@ -526,7 +526,12 @@ class MainWindow(qtw.QMainWindow):
         self.mfNewTicketAction.setText("New Ticket")
         self.mfQueryTicketAction = qtw.QAction()
         self.mfQueryTicketAction.setText("Query Ticket")
-        self.menuFile.addActions([self.mfNewTicketAction, self.mfQueryTicketAction])
+        self.mfExitAction = qtw.QAction()
+        self.mfExitAction.setText("Exit")
+        self.menuFile.addActions([
+            self.mfNewTicketAction,
+            self.mfQueryTicketAction, 
+            self.mfExitAction])
 
         self.menuHelp = qtw.QMenu()
         self.menuHelp.setTitle("Help")
@@ -557,13 +562,17 @@ class MainWindow(qtw.QMainWindow):
         self.show()
     
     def processTrigger(self, q):
-        print(q.text())
+        # print(q.text())
         if q.text() == "New Ticket":
             self.queryTickets.hide()
             self.updateTicket.show()
         elif q.text() == "Query Ticket":
             self.queryTickets.show()
             self.updateTicket.hide()
+        elif q.text() == "Exit":
+            self.conn.commit()
+            self.conn.close()
+            sys.exit()
         else: # About
             msg = qtw.QMessageBox()
             msg.setIcon(qtw.QMessageBox.Information)
