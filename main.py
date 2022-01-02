@@ -376,7 +376,7 @@ class QueryTicketsWidget(qtw.QWidget):
         self.hBoxLayout1 = qtw.QHBoxLayout()
         self.hBoxLayout1.addWidget(self.queryButton)
         self.hBoxLayout1.addWidget(self.resetButton)
-        self.hBoxLayout1.addWidget(self.updateButton)
+        # self.hBoxLayout1.addWidget(self.updateButton)
         self.hBoxLayout1.setAlignment(qtc.Qt.AlignCenter)
         
         self.outputTable = qtw.QTableWidget(self) 
@@ -394,6 +394,7 @@ class QueryTicketsWidget(qtw.QWidget):
         vLayout.addLayout(formLayout)
         vLayout.addWidget(self.outputTable)
         vLayout.addWidget(self.outputTextEdit)
+        vLayout.addWidget(self.updateButton)
         
         self.outputTextEdit.show()
         self.outputTable.hide()
@@ -553,7 +554,6 @@ class MainWindow(qtw.QMainWindow):
         self.centralWidget.setLayout(self.vBoxLayout)
         self.setCentralWidget(self.centralWidget)
 
-        
         self.show()
     
     def processTrigger(self, q):
@@ -587,7 +587,7 @@ if __name__== "__main__":
         cur.execute("SELECT CODE, DESCRIPTION FROM TICKET_TYPE")
         ticketType = cur.fetchall()
         mainWindow = MainWindow(ticketType, ticketSeverity, ticketStatus, conn, cur)
-         
+        
         icon = qtg.QIcon()
         icon.addFile("./resources/icon.png")
         app.setWindowIcon(icon)
