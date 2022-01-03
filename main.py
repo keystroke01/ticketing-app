@@ -74,6 +74,8 @@ class UpdateTicketWidget(qtw.QWidget):
         
         self.attachFilesButton = qtw.QPushButton("Attach Files",
                                                  clicked = lambda: self.attachFiles())
+        self.detachFilesButton = qtw.QPushButton("Remove Files",
+                                                 clicked = lambda: self.detachFiles())
         self.attachedFilesListWidget = qtw.QListWidget()
         self.fileDialogBox = qtw.QFileDialog()
         self.submitButton = qtw.QPushButton("Submit",
@@ -107,7 +109,14 @@ class UpdateTicketWidget(qtw.QWidget):
         self.formLayout.addRow("Status", self.ticketStatus)
         self.formLayout.addRow("Reported Date", self.reportedDate)
         self.formLayout.addRow("Closed Date", self.closedDate)
-        self.formLayout.addRow(self.attachFilesButton, self.attachedFilesListWidget)
+        
+        self.vFilesButtonWidget = qtw.QWidget()
+        self.vFileButtonsLayout = qtw.QVBoxLayout()
+        self.vFileButtonsLayout.addWidget(self.attachFilesButton)
+        self.vFileButtonsLayout.addWidget(self.detachFilesButton)
+        self.vFilesButtonWidget.setLayout(self.vFileButtonsLayout)
+
+        self.formLayout.addRow(self.vFilesButtonWidget, self.attachedFilesListWidget)
         self.hBoxLayout2 = qtw.QHBoxLayout()
         self.hBoxLayout2.addWidget(self.submitButton)
         self.hBoxLayout2.addWidget(self.updateButton)
@@ -214,7 +223,7 @@ class UpdateTicketWidget(qtw.QWidget):
                 msg.setWindowTitle("Error")
                 msg.exec_()
         else:
-        # Update the selected Record
+            # Update the selected Record
             sqlQuery = f"""
             UPDATE 
                 TICKETS 
@@ -238,6 +247,29 @@ class UpdateTicketWidget(qtw.QWidget):
             """
             
             self.cur.execute(sqlQuery)
+            self.conn.commit()
+
+            # Update the attachments
+            for row in range(self.attachedFilesListWidget.count()):
+                fromPath = self.attachedFilesListWidget.item(row).text()
+                if ("./files/attachments/" in fromPath) == False:
+                    fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
+                    fileName = fromPathSplit[len(fromPathSplit) - 1]
+                    toPath = f"./files/attachments/{self.ticketID}"
+                    makedirs(toPath, exist_ok=True)
+                    toPath += f"/{fileName}"
+                    print(toPath)
+                    shutil.copy(fromPath,toPath)
+                    sqlQuery = f"""
+                    INSERT 
+                    INTO 
+                    TICKET_ATTACHMENTS(ATTACHMENT_PATH,TICKET_ID)
+                    VALUES('{toPath}',
+                            {self.ticketID}
+                        );
+                    """ 
+                    print(sqlQuery)
+                self.cur.execute(sqlQuery)
             self.conn.commit()
 
             output = "The ticket has been updated with the following details:"
@@ -268,15 +300,33 @@ class UpdateTicketWidget(qtw.QWidget):
         self.ticketType.setCurrentIndex(-1)
         self.ticketSeverity.setCurrentIndex(-1)
         self.ticketStatus.setCurrentIndex(-1)
-        
-        for row in range(self.attachedFilesListWidget.count()):
-            self.attachedFilesListWidget.takeItem(row)
+        self.attachedFilesListWidget.clear()
 
     def attachFiles(self):
         self.fileDialogBox.open()
-        fileName = self.fileDialogBox.getOpenFileName()
-        self.attachedFilesListWidget.addItem(fileName[0])
-        # print(fileName[0])
+        filePath = self.fileDialogBox.getOpenFileName()
+        filePathSplit = filePath[0].split("/")
+        fileName = filePathSplit[len(filePathSplit) - 1]
+        print(fileName, filePathSplit)
+
+        if self.attachedFilesListWidget.count() == 0:
+            self.attachedFilesListWidget.addItem(filePath[0])
+            
+        elif self.attachedFilesListWidget.count() > 0:
+            nameMatchFoundItems = self.attachedFilesListWidget.findItems(
+                "/"+fileName, qtc.Qt.MatchContains)
+            print(nameMatchFoundItems)
+            if len(nameMatchFoundItems) == 0:
+                self.attachedFilesListWidget.addItem(filePath[0])
+            
+                
+
+    def detachFiles(self):
+        if(len(self.attachedFilesListWidget.selectedItems()) > 0):
+            if ("/files/attachments/" in self.attachedFilesListWidget.selectedItems()[0].text()) == False:
+                i = self.attachedFilesListWidget.selectedIndexes()[0].row()
+                self.attachedFilesListWidget.takeItem(i)
+            
     
     def testUpload(self):
         # for row in range(self.attachedFilesListWidget.count()):
@@ -500,6 +550,15 @@ class QueryTicketsWidget(qtw.QWidget):
                 elif i == 7: # Closed Date
                     self.updateTicketWidget.closedDate.setDate(qtc.QDate.fromString(rowItemStr, 'dd/MMM/yyyy'))
             
+            # Attach the related files
+            queryResult = self.cur.execute(f"""
+            SELECT * FROM TICKET_ATTACHMENTS WHERE TICKET_ID = {self.updateTicketWidget.ticketID}""")
+            queryCols = []
+            for row in queryResult:
+                print(row[1])
+                self.updateTicketWidget.attachedFilesListWidget.addItem(row[1])
+            # print(queryCols)
+
             self.updateTicketWidget.outputTextEdit.clear()
             self.updateTicketWidget.formLayoutWidget.show()
             self.updateTicketWidget.submitButton.hide()
