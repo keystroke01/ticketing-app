@@ -10,9 +10,10 @@ from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
 from os import path, makedirs, getcwd
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
+import numpy as np
 import sqlite3, re, shutil, sys
 
 
@@ -580,6 +581,8 @@ class AnalyzeTicketsWidget(qtw.QWidget):
         for desc in queryResult.description:
             cols.append(desc[0])
         df = DataFrame(data=queryResult,columns=cols)
+        df = df.replace(np.nan, "NA")
+        # print(df.replace(np.nan, "NA"))
         dfGBType = df.groupby("TYPE")["ID"].count().reset_index()
         dfGBSeverity = df.groupby("SEVERITY")["ID"].count().reset_index()
 
