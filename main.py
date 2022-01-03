@@ -141,7 +141,7 @@ class UpdateTicketWidget(qtw.QWidget):
         # Check if the title is empty
         if(re.search("^\s*$", self.ticketTitle.text())): 
             err = "Title is empty or contains only spaces. Please enter a valid Title."
-            # print(err)
+            # # print(err)
             msg = qtw.QMessageBox()
             msg.setIcon(qtw.QMessageBox.Critical)
             msg.setText(err)
@@ -183,7 +183,7 @@ class UpdateTicketWidget(qtw.QWidget):
                 toPath = f"./files/attachments/{subFolderName}"
                 makedirs(toPath, exist_ok=True)
                 toPath += f"/{fileName}"
-                print(toPath)
+                # print(toPath)
                 shutil.copy(fromPath,toPath)
                 sqlQuery = f"""
                 INSERT 
@@ -195,7 +195,7 @@ class UpdateTicketWidget(qtw.QWidget):
                 """ 
                 self.cur.execute(sqlQuery)
             self.conn.commit()
-            # print("Row added")
+            # # print("Row added")
             
             output = "A new ticket has been created with the following details:"
             output += "\n---------------------------------------------------------"
@@ -219,7 +219,7 @@ class UpdateTicketWidget(qtw.QWidget):
         
         if(re.search("^\s*$", self.ticketTitle.text())): 
                 err = "Title is empty or contains only spaces. Please enter a valid Title."
-                # print(err)
+                # # print(err)
                 msg = qtw.QMessageBox()
                 msg.setIcon(qtw.QMessageBox.Critical)
                 msg.setText(err)
@@ -261,7 +261,7 @@ class UpdateTicketWidget(qtw.QWidget):
                     toPath = f"./files/attachments/{self.ticketID}"
                     makedirs(toPath, exist_ok=True)
                     toPath += f"/{fileName}"
-                    print(toPath)
+                    # print(toPath)
                     shutil.copy(fromPath,toPath)
                     sqlQuery = f"""
                     INSERT 
@@ -271,7 +271,7 @@ class UpdateTicketWidget(qtw.QWidget):
                             {self.ticketID}
                         );
                     """ 
-                    print(sqlQuery)
+                    # print(sqlQuery)
                 self.cur.execute(sqlQuery)
             self.conn.commit()
 
@@ -310,7 +310,7 @@ class UpdateTicketWidget(qtw.QWidget):
         filePath = self.fileDialogBox.getOpenFileName()
         filePathSplit = filePath[0].split("/")
         fileName = filePathSplit[len(filePathSplit) - 1]
-        print(fileName, filePathSplit)
+        # print(fileName, filePathSplit)
 
         if self.attachedFilesListWidget.count() == 0:
             self.attachedFilesListWidget.addItem(filePath[0])
@@ -318,7 +318,7 @@ class UpdateTicketWidget(qtw.QWidget):
         elif self.attachedFilesListWidget.count() > 0:
             nameMatchFoundItems = self.attachedFilesListWidget.findItems(
                 "/"+fileName, qtc.Qt.MatchContains)
-            print(nameMatchFoundItems)
+            # print(nameMatchFoundItems)
             if len(nameMatchFoundItems) == 0:
                 self.attachedFilesListWidget.addItem(filePath[0])
             
@@ -329,23 +329,6 @@ class UpdateTicketWidget(qtw.QWidget):
             if ("/files/attachments/" in self.attachedFilesListWidget.selectedItems()[0].text()) == False:
                 i = self.attachedFilesListWidget.selectedIndexes()[0].row()
                 self.attachedFilesListWidget.takeItem(i)
-            
-    
-    def testUpload(self):
-        # for row in range(self.attachedFilesListWidget.count()):
-        #    fromPath = self.attachedFilesListWidget.item(row).text()
-        #    fromPathSplit = self.attachedFilesListWidget.item(row).text().split("/")
-        #    fileName = fromPathSplit[len(fromPathSplit) - 1]
-        #    sqlQuery = "select max(ticket_id) from Tickets"
-        #    self.cur.execute(sqlQuery)
-        #    subFolderName = self.cur.fetchone()[0]
-        #    toPath = f"./files/attachments/{subFolderName}"
-        #    makedirs(toPath, exist_ok=True)
-        #    toPath += f"/{fileName}"
-        #    print(toPath)
-        #    shutil.copy(fromPath,toPath)
-        
-        print(self.ticketStatus.currentData())
            
      
 class QueryTicketsWidget(qtw.QWidget):
@@ -486,15 +469,15 @@ class QueryTicketsWidget(qtw.QWidget):
         
         if queryFilter != " WHERE ":
             query += queryFilter
-        # print(query)
+        # # print(query)
         queryResult = self.cur.execute(query)
         self.cols = []
         for desc in queryResult.description:
             self.cols.append(desc[0])
-        # print(self.cols)
-        # print(queryResult.fetchall())
+        # # print(self.cols)
+        # # print(queryResult.fetchall())
         rows = queryResult.fetchall()
-        # print(rows)
+        # # print(rows)
         if len(rows) != 0:
             self.outputTextEdit.hide()
             self.outputTable.setRowCount(len(rows))
@@ -503,7 +486,7 @@ class QueryTicketsWidget(qtw.QWidget):
             for i in range(0,len(rows)):
                 for j in range(0,len(self.cols)):
                     self.outputTable.setItem(i, j, qtw.QTableWidgetItem(rows[i][j]))
-                    # print(len(qtw.QTableWidgetItem(rows[i][j]).text()))
+                    # # print(len(qtw.QTableWidgetItem(rows[i][j]).text()))
             self.outputTable.setWordWrap(True)
             self.outputTable.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
             self.outputTable.setSelectionBehavior(qtw.QTableView.SelectRows)
@@ -530,7 +513,7 @@ class QueryTicketsWidget(qtw.QWidget):
             rowItems = self.outputTable.selectedItems()
             for i in range(len(self.cols)):
                 rowItemStr = rowItems[i].text()
-                print(rowItemStr)
+                # print(rowItemStr)
                 if i == 0:
                     self.updateTicketWidget.ticketID = rowItemStr
                 elif i == 1: # TITLE 
@@ -559,9 +542,9 @@ class QueryTicketsWidget(qtw.QWidget):
             SELECT * FROM TICKET_ATTACHMENTS WHERE TICKET_ID = {self.updateTicketWidget.ticketID}""")
             queryCols = []
             for row in queryResult:
-                print(row[1])
+                # print(row[1])
                 self.updateTicketWidget.attachedFilesListWidget.addItem(row[1])
-            # print(queryCols)
+            # # print(queryCols)
 
             self.updateTicketWidget.outputTextEdit.clear()
             self.updateTicketWidget.formLayoutWidget.show()
@@ -633,8 +616,8 @@ class AnalyzeTicketsWidget(qtw.QWidget):
 
         self.canvas.draw()
 
-        print(dfGBType)
-        print(dfGBSeverity)
+        # print(dfGBType)
+        # print(dfGBSeverity)
         
         
 class MainWindow(qtw.QMainWindow):
@@ -697,7 +680,7 @@ class MainWindow(qtw.QMainWindow):
         self.show()
     
     def processTrigger(self, q):
-        # print(q.text())
+        # # print(q.text())
         if q.text() == "New Ticket":
             self.queryTickets.hide()
             self.updateTicket.show()
@@ -725,7 +708,7 @@ class MainWindow(qtw.QMainWindow):
       
 if __name__== "__main__":
     dbPath = getcwd() + "/files/data.db"
-    print(getcwd())
+    # print(getcwd())
     if path.exists(dbPath):
         # Start the app
         app = qtw.QApplication(sys.argv) 
@@ -747,7 +730,7 @@ if __name__== "__main__":
         conn.commit()
         conn.close()
     else:
-        # print("False")
+        # # print("False")
         app = qtw.QApplication(sys.argv)
         # mainWindow = qtw.QMainWindow()  
         err = "Database file does not exist\nPlease check ./files/ for data.db"
