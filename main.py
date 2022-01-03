@@ -533,7 +533,7 @@ class QueryTicketsWidget(qtw.QWidget):
                 print(rowItemStr)
                 if i == 0:
                     self.updateTicketWidget.ticketID = rowItemStr
-                elif i == 1: # TITLE
+                elif i == 1: # TITLE 
                     self.updateTicketWidget.ticketTitle.setText(rowItemStr) 
                 elif i == 2: # DESCRIPTION
                     self.updateTicketWidget.ticketDesc.setText(rowItemStr)
@@ -580,7 +580,7 @@ class AnalyzeTicketsWidget(qtw.QWidget):
         self.canvas = FigureCanvas(self.figure)
         
         self.refreshButton = qtw.QPushButton("Refresh",
-                                             clicked = lambda: self.refreshData())
+                                             clicked = lambda: self.plotData())
         vLayout = qtw.QVBoxLayout()
         
         vLayout.addWidget(self.canvas)
@@ -588,9 +588,8 @@ class AnalyzeTicketsWidget(qtw.QWidget):
         
         self.setLayout(vLayout)
     
-    def refreshData(self):
+    def plotData(self):
         self.figure.clear()
-        # self.canvas.
        
         sqlQuery = "SELECT * FROM V_TICKETS"
         queryResult = self.cur.execute(sqlQuery)
@@ -605,20 +604,33 @@ class AnalyzeTicketsWidget(qtw.QWidget):
             for i in range(len(x)):
                 plt.text(i, y[i], y[i], ha = 'center')
         
-        axes = self.figure.add_subplot(121)
+        axes = self.figure.add_subplot(221)
         axes.bar(dfGBType['TYPE'], dfGBType['ID'])
         addlabels(dfGBType['TYPE'], dfGBType['ID'])
         plt.xlabel("Ticket Type")
         plt.ylabel("No of Tickets")
         plt.title("No of Tickets per Type")
 
-        axes2 = self.figure.add_subplot(122)
+        axes2 = self.figure.add_subplot(222)
         axes2.bar(dfGBSeverity['SEVERITY'], dfGBSeverity['ID'])
         addlabels(dfGBSeverity['SEVERITY'], dfGBSeverity['ID'])
         plt.xlabel("Severity")
         plt.ylabel("No of Tickets")
         plt.title("No of Tickets per Severity")
         
+        axes3 = self.figure.add_subplot(223)
+        axes3.pie(
+            dfGBType['ID'], 
+            labels = dfGBType['TYPE'],
+            autopct='%1.2f%%')
+
+        axes4 = self.figure.add_subplot(224)
+        axes4.pie(
+            dfGBSeverity['ID'], 
+            labels = dfGBSeverity['SEVERITY'],
+            autopct='%1.2f%%'
+            )
+
         self.canvas.draw()
 
         print(dfGBType)
@@ -631,8 +643,8 @@ class MainWindow(qtw.QMainWindow):
         self.conn = conn
         self.c = cur
         self.setWindowTitle("Ticketing App")
-        self.setBaseSize(qtc.QSize(1366,768))
-        self.setMinimumSize(qtc.QSize(1366,768))
+        # self.setBaseSize(qtc.QSize(1366,768))
+        # self.setMinimumSize(qtc.QSize(1366,768))
         
         self.menuBar = qtw.QMenuBar()
         self.setMenuBar(self.menuBar)
@@ -697,6 +709,7 @@ class MainWindow(qtw.QMainWindow):
         elif q.text() == "Analyze":
             self.queryTickets.hide()
             self.updateTicket.hide()
+            self.analyzeTickets.plotData()
             self.analyzeTickets.show()
         elif q.text() == "Exit":
             self.conn.commit()
