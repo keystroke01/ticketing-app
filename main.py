@@ -9,7 +9,10 @@ Created on Fri Dec 17 14:50:14 2021
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtGui as qtg
 from PyQt5 import QtCore as qtc
-from os import path, makedirs
+from os import path, makedirs, getcwd
+from pandas import DataFrame, Series
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
 import sqlite3, re, shutil, sys
 
 
@@ -523,6 +526,7 @@ class QueryTicketsWidget(qtw.QWidget):
 
     def updateSelectedTicket(self):
         if len(self.outputTable.selectedItems()) > 0:
+            self.updateTicketWidget.resetTicket()
             rowItems = self.outputTable.selectedItems()
             for i in range(len(self.cols)):
                 rowItemStr = rowItems[i].text()
@@ -565,8 +569,62 @@ class QueryTicketsWidget(qtw.QWidget):
             self.updateTicketWidget.updateButton.show()        
             self.updateTicketWidget.show()
             self.toolBox.setCurrentIndex(1)
-            
-  
+
+class AnalyzeTicketsWidget(qtw.QWidget):
+    def __init__(self, conn, cur):
+        super().__init__()
+        self.conn = conn
+        self.cur = cur
+        
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        
+        self.refreshButton = qtw.QPushButton("Refresh",
+                                             clicked = lambda: self.refreshData())
+        vLayout = qtw.QVBoxLayout()
+        
+        vLayout.addWidget(self.canvas)
+        vLayout.addWidget(self.refreshButton)
+        
+        self.setLayout(vLayout)
+    
+    def refreshData(self):
+        self.figure.clear()
+        # self.canvas.
+       
+        sqlQuery = "SELECT * FROM V_TICKETS"
+        queryResult = self.cur.execute(sqlQuery)
+        cols = []
+        for desc in queryResult.description:
+            cols.append(desc[0])
+        df = DataFrame(data=queryResult,columns=cols)
+        dfGBType = df.groupby("TYPE")["ID"].count().reset_index()
+        dfGBSeverity = df.groupby("SEVERITY")["ID"].count().reset_index()
+
+        def addlabels(x,y):
+            for i in range(len(x)):
+                plt.text(i, y[i], y[i], ha = 'center')
+        
+        axes = self.figure.add_subplot(121)
+        axes.bar(dfGBType['TYPE'], dfGBType['ID'])
+        addlabels(dfGBType['TYPE'], dfGBType['ID'])
+        plt.xlabel("Ticket Type")
+        plt.ylabel("No of Tickets")
+        plt.title("No of Tickets per Type")
+
+        axes2 = self.figure.add_subplot(122)
+        axes2.bar(dfGBSeverity['SEVERITY'], dfGBSeverity['ID'])
+        addlabels(dfGBSeverity['SEVERITY'], dfGBSeverity['ID'])
+        plt.xlabel("Severity")
+        plt.ylabel("No of Tickets")
+        plt.title("No of Tickets per Severity")
+        
+        self.canvas.draw()
+
+        print(dfGBType)
+        print(dfGBSeverity)
+        
+        
 class MainWindow(qtw.QMainWindow):
     def __init__(self, ticketType, ticketSeverity, ticketStatus, conn, cur):
         super().__init__()
@@ -585,11 +643,14 @@ class MainWindow(qtw.QMainWindow):
         self.mfNewTicketAction.setText("New Ticket")
         self.mfQueryTicketAction = qtw.QAction()
         self.mfQueryTicketAction.setText("Query Ticket")
+        self.mfAnalyzeAction = qtw.QAction()
+        self.mfAnalyzeAction.setText("Analyze")
         self.mfExitAction = qtw.QAction()
         self.mfExitAction.setText("Exit")
         self.menuFile.addActions([
             self.mfNewTicketAction,
-            self.mfQueryTicketAction, 
+            self.mfQueryTicketAction,
+            self.mfAnalyzeAction, 
             self.mfExitAction])
 
         self.menuHelp = qtw.QMenu()
@@ -608,13 +669,16 @@ class MainWindow(qtw.QMainWindow):
         
         self.queryTickets = QueryTicketsWidget(ticketType, ticketSeverity, ticketStatus, conn, cur)
         self.updateTicket = UpdateTicketWidget(ticketType, ticketSeverity, ticketStatus, conn, cur)
+        self.analyzeTickets = AnalyzeTicketsWidget(conn, cur)
 
         self.queryTickets.hide()
         self.updateTicket.show()
+        self.analyzeTickets.hide()
 
         self.vBoxLayout = qtw.QVBoxLayout()
         self.vBoxLayout.addWidget(self.queryTickets)
         self.vBoxLayout.addWidget(self.updateTicket)
+        self.vBoxLayout.addWidget(self.analyzeTickets)
         self.centralWidget.setLayout(self.vBoxLayout)
         self.setCentralWidget(self.centralWidget)
 
@@ -625,9 +689,15 @@ class MainWindow(qtw.QMainWindow):
         if q.text() == "New Ticket":
             self.queryTickets.hide()
             self.updateTicket.show()
+            self.analyzeTickets.hide()
         elif q.text() == "Query Ticket":
             self.queryTickets.show()
             self.updateTicket.hide()
+            self.analyzeTickets.hide()
+        elif q.text() == "Analyze":
+            self.queryTickets.hide()
+            self.updateTicket.hide()
+            self.analyzeTickets.show()
         elif q.text() == "Exit":
             self.conn.commit()
             self.conn.close()
@@ -641,12 +711,13 @@ class MainWindow(qtw.QMainWindow):
             msg.exec_()
       
 if __name__== "__main__":
-    filePath = ("./files/data.db")
-    if path.exists(filePath):
+    dbPath = getcwd() + "/files/data.db"
+    print(getcwd())
+    if path.exists(dbPath):
         # Start the app
         app = qtw.QApplication(sys.argv) 
         # Open the database and connect to it
-        conn = sqlite3.connect(filePath)
+        conn = sqlite3.connect(dbPath)
         cur = conn.cursor()
         cur.execute("SELECT CODE, DESCRIPTION FROM STATUS")
         ticketStatus = cur.fetchall()
@@ -664,12 +735,14 @@ if __name__== "__main__":
         conn.close()
     else:
         # print("False")
-        app = qtw.QApplication(sys.argv)  
-        err = "Database file does not exist"
+        app = qtw.QApplication(sys.argv)
+        # mainWindow = qtw.QMainWindow()  
+        err = "Database file does not exist\nPlease check ./files/ for data.db"
         msg = qtw.QMessageBox()
         msg.setIcon(qtw.QMessageBox.Critical)
         msg.setText(err)
         msg.setWindowTitle("Error !")
-        app.exec_()
         sys.exit(msg.exec_())
+        app.exec_()
+        # sys.exit()
 
