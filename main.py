@@ -629,8 +629,8 @@ class MainWindow(qtw.QMainWindow):
         self.conn = conn
         self.c = cur
         self.setWindowTitle("Ticketing App")
-        # self.setBaseSize(qtc.QSize(1366,768))
-        # self.setMinimumSize(qtc.QSize(1366,768))
+        self.setBaseSize(qtc.QSize(1366,768))
+        self.setMinimumSize(qtc.QSize(1366,768))
         
         self.menuBar = qtw.QMenuBar()
         self.setMenuBar(self.menuBar)

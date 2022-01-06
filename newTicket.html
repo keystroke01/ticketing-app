@@ -11,56 +11,91 @@
 <body>
     <div class="topnav">
         <a class="active" href="newTicket.html">New Ticket</a>
-        <a href="newTicket.html">Search Tickets</a>
+        <a href="searchTickets.html">Search Tickets</a>
+        <a href="analyzeTickets.html">Analyze</a>
     </div>
     
-    <div id="outer-block" align='center'>
+    <div id="outer-block" align='left'>
         <form>
             <h2>Enter the details below</h2>
-            <hr><br>
-            <div id="title-desc-block" name="title-desc-block">
-                <input type="text" id="ticket-title" name="ticket-title" placeholder="Title">
-                <br><br>
-                <textarea id="ticket-description" name="ticket-description" rows="10vw" cols="65vw"
-                    placeholder="Description"></textarea>
+            <hr>
+            <br>
+            <div class="row">
+                <div class="col-25">
+                    <label for="ticket-title" id="ticket-title-label">Title</label>
+                </div>
+                <div class="col-75">
+                    <input type="text" id="ticket-title" name="ticket-title" placeholder="Title">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-25">
+                    <label for="ticket-description" id="ticket-description-label">Description</label>
+                </div>
+                <div class="col-75">
+                    <textarea id="ticket-description" name="ticket-description" rows="10vw" cols="65vw" placeholder="Description"></textarea>
+                </div>
+            </div>
+            <div class="row">
+               <div class="col-25">
+                   <label for="reported-date" id="reported-date-label">Reported Date</label>
+                </div>
+                <div class="col-75">
+                    <input type="date" id="reported-date" name="reported-date">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-25">
+                    <label for="closed-date" id="closed-date-label">Closed Date</label>
+                </div>
+                <div class="col-75">
+                    <input type="date" id="closed-date" name="closed-date">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-25">
+                    <label for="ticket-type">Type</label>
+                </div>
+                <div class="col-75">
+                    <select id="ticket-type" name="ticket-type">
+                        <option value="bug">Bug</option>
+                        <option value="user-assistance">User Assistance</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-25">
+                    <label for="ticket-severity">Severity</label>
+                </div>
+                <div class="col-75">
+                    <select id="ticket-severity" name="ticket-severity">
+                        <option value="minor">Minor</option>
+                        <option value="major">Major</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-25">
+                    <label for="ticket-status">Status</label>
+                </div>
+                <div class="col-75">
+                    <select id="ticket-status" name="ticket-status">
+                        <option value="open">Open</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="awaiting-deployment">Awaiting Deployment</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
             </div>
             <br>
-            <div id="buttons-block" class="buttons-block">
-                <label for="reported-date">Reported Date</label>
-                <input type="date" id="reported-date" name="reported-date">
-                <label for="closed-date">Closed Date</label>
-                <input type="date" id="closed-date" name="closed-date">
-            </div>
-            <br>
-            <div id="selection-block" class="selection-block">
-                <label for="ticket-type">Type</label>
-                <select id="ticket-type" name="ticket-type">
-                    <option value="bug">Bug</option>
-                    <option value="user-assistance">User Assistance</option>
-                </select>
-                <label for="ticket-severity">Severity</label>
-                <select id="ticket-severity" name="ticket-severity">
-                    <option value="minor">Minor</option>
-                    <option value="major">Major</option>
-                </select>
-                <label for="ticket-status">Status</label>
-                <select id="ticket-status" name="ticket-status">
-                    <option value="open">Open</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="awaiting-deployment">Awaiting Deployment</option>
-                    <option value="closed">Closed</option>
-                </select>
-            </div>
-            <br>
-            <div id="buttons-block" name="buttons-block">
-                <button type="button" id="submit-button" name="new-ticket-submit-button"
-                    class="btn-success">Submit</button>
+            <div class="row">
+                <button type="button" id="submit-button" name="new-ticket-submit-button" class="btn-success">Submit</button>
                 <button type="button" id="reset-button" name="new-ticket-reset-button" class="btn-danger">Reset</button>
             </div>
             <br>
-            <br>
-            <textarea id="output-textarea" placeholder="Output" rows="10vw" cols="65vw"></textarea>
-
+            <div class="row">
+                <textarea id="output-textarea" placeholder="Output" rows="10vw" cols="65vw"></textarea>
+            </div>  
             <script src="./script.js"></script>
         </form>
     </div>

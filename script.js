@@ -11,4 +11,4 @@ function onSubmit() {
     document.getElementById('output-textarea').innerHTML = output;
 }
 
-document.getElementById('new-ticket-submit-button').addEventListener('click', onSubmit);
+document.getElementById('submit-button').addEventListener('click', onSubmit);
